@@ -105,6 +105,66 @@ void initMilightUdpServers() {
   }
 }
 
+// True if the given group has an alias configured.
+static bool isAliased(const BulbId& id) {
+  for (auto itr = settings.groupIdAliases.begin(); itr != settings.groupIdAliases.end(); ++itr) {
+    const BulbId& aliasId = itr->second.bulbId;
+    if (aliasId.deviceId == id.deviceId && aliasId.deviceType == id.deviceType && aliasId.groupId == id.groupId) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Group 0 ("all") is a virtual group. After a command to an individual group,
+ * derive group 0's on/off state from the individual groups: ON if any of them
+ * is on (or in night mode), OFF if all are off.
+ *
+ * Only groups that have an alias are considered (commands to group 0 also
+ * switch groups without any lamp attached). If no group of this device has an
+ * alias, all groups are considered.
+ *
+ * Returns true if group 0's state changed.
+ */
+bool syncGroup0State(const BulbId& bulbId) {
+  if (bulbId.groupId == 0) {
+    return false;
+  }
+
+  const MiLightRemoteConfig* remote = MiLightRemoteConfig::fromType(bulbId.deviceType);
+  if (remote == NULL || remote->numGroups == 0) {
+    return false;
+  }
+
+  BulbId otherId(bulbId);
+
+  bool hasAliasedGroups = false;
+  for (size_t i = 1; i <= remote->numGroups && !hasAliasedGroups; i++) {
+    otherId.groupId = i;
+    hasAliasedGroups = isAliased(otherId);
+  }
+
+  bool anyOn = false;
+  for (size_t i = 1; i <= remote->numGroups && !anyOn; i++) {
+    otherId.groupId = i;
+
+    if (hasAliasedGroups && !isAliased(otherId)) {
+      continue;
+    }
+
+    GroupState* state = stateStore->get(otherId);
+    if (state != NULL && (state->isNightMode() || (state->isSetState() && state->getState() == ON))) {
+      anyOn = true;
+    }
+  }
+
+  otherId.groupId = 0;
+  GroupState* group0State = stateStore->get(otherId);
+
+  return group0State != NULL && group0State->setState(anyOn ? ON : OFF);
+}
+
 /**
  * Milight RF packet handler.
  *
@@ -141,6 +201,8 @@ void onPacketSentHandler(uint8_t* packet, const MiLightRemoteConfig& config) {
     stateStore->set(bulbId, stateUpdates);
   }
 
+  const bool group0Changed = syncGroup0State(bulbId);
+
   if (mqttClient) {
     // Sends the state delta derived from the raw packet
     char output[200];
@@ -150,6 +212,13 @@ void onPacketSentHandler(uint8_t* packet, const MiLightRemoteConfig& config) {
     // Sends the entire state (for group 0 also the state of all individual groups)
     if (groupState != NULL) {
       bulbStateUpdater->enqueueUpdate(bulbId);
+    }
+
+    // Keep the "all" group in sync after a change to an individual group
+    if (group0Changed) {
+      BulbId group0Id(bulbId);
+      group0Id.groupId = 0;
+      bulbStateUpdater->enqueueRefresh(group0Id);
     }
   }
 
