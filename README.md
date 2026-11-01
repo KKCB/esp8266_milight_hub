@@ -1,5 +1,14 @@
 # esp8266_milight_hub [![Build Status](https://travis-ci.org/sidoh/esp8266_milight_hub.svg?branch=master)](https://travis-ci.org/sidoh/esp8266_milight_hub) [![License][shield-license]][info-license]
 
+> **About this fork:** This is a fork of [sidoh/esp8266_milight_hub](https://github.com/sidoh/esp8266_milight_hub)
+> (based on 1.13.0) with fixes for MQTT group state: commands to group 0 ("all") now publish the state
+> of every individual group, all states are re-published after an MQTT reconnect, and group 0's
+> on/off state follows the individual groups. It builds on upstream PR
+> [#779](https://github.com/sidoh/esp8266_milight_hub/pull/779) by Cody Cutrer
+> ([@ccutrer](https://github.com/ccutrer)), with a fix to its reconnect handling and additional
+> changes not part of that PR. Details and credits: [CHANGES-FORK.md](CHANGES-FORK.md).
+> Everything below is the original upstream README.
+
 This is a replacement for a Milight/LimitlessLED remote/gateway hosted on an ESP8266. Leverages [Henryk Plötz's awesome reverse-engineering work](https://hackaday.io/project/5888-reverse-engineering-the-milight-on-air-protocol).
 
 [Milight bulbs](https://www.amazon.com/Mi-light-Dimmable-RGBWW-Spotlight-Smart/dp/B01LPRQ4BK/r) are cheap smart bulbs that are controllable with an undocumented 2.4 GHz protocol. In order to control them, you either need a [remote](https://www.amazon.com/Mi-light-Dimmable-RGBWW-Spotlight-Smart/dp/B01LCSALV6/r?th=1) ($13), which allows you to control them directly, or a [WiFi gateway](http://futlight.com/productlist.aspx?typeid=125) ($30), which allows you to control them with a mobile app or a [UDP protocol](https://github.com/Fantasmos/LimitlessLED-DevAPI).
