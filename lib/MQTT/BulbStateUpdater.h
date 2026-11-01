@@ -18,7 +18,10 @@ class BulbStateUpdater {
 public:
   BulbStateUpdater(Settings& settings, MqttClient& mqttClient, GroupStateStore& stateStore);
 
-  void enqueueUpdate(BulbId bulbId, GroupState& groupState);
+  void enqueueUpdate(BulbId bulbId);
+  // Marks the stored state as MQTT-dirty and enqueues it, so it is re-published
+  // even if it has not changed (e.g. after an MQTT reconnect).
+  void enqueueRefresh(BulbId bulbId);
   void loop();
   void enable();
   void disable();

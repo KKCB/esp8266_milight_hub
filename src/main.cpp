@@ -147,9 +147,9 @@ void onPacketSentHandler(uint8_t* packet, const MiLightRemoteConfig& config) {
     serializeJson(result, output);
     mqttClient->sendUpdate(remoteConfig, bulbId.deviceId, bulbId.groupId, output);
 
-    // Sends the entire state
+    // Sends the entire state (for group 0 also the state of all individual groups)
     if (groupState != NULL) {
-      bulbStateUpdater->enqueueUpdate(bulbId, *groupState);
+      bulbStateUpdater->enqueueUpdate(bulbId);
     }
   }
 
@@ -272,6 +272,14 @@ void applySettings() {
         discoveryClient.removeOldDevices(settings.deletedGroupIdAliases);
 
         settings.deletedGroupIdAliases.clear();
+      }
+
+      // Re-publish the state of all aliased groups so retained MQTT state is
+      // current after a (re)connect of the hub or the broker.
+      if (bulbStateUpdater) {
+        for (auto itr = settings.groupIdAliases.begin(); itr != settings.groupIdAliases.end(); ++itr) {
+          bulbStateUpdater->enqueueRefresh(itr->second.bulbId);
+        }
       }
     });
 

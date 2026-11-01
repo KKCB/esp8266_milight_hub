@@ -106,7 +106,7 @@ public:
   bool clearDirty();
 
   bool isMqttDirty() const;
-  inline bool setMqttDirty();
+  bool setMqttDirty();
   bool clearMqttDirty();
 
   // Clears all of the fields in THIS GroupState that have different values

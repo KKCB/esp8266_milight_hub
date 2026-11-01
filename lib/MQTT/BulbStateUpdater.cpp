@@ -17,11 +17,34 @@ void BulbStateUpdater::disable() {
   this->enabled = false;
 }
 
-void BulbStateUpdater::enqueueUpdate(BulbId bulbId, GroupState& groupState) {
+void BulbStateUpdater::enqueueUpdate(BulbId bulbId) {
   staleGroups.push(bulbId);
+
+  // Group 0 is a virtual group. Commands to it also change the state of every
+  // individual group (see GroupStateStore::set), so publish those as well.
+  if (bulbId.groupId == 0) {
+    const MiLightRemoteConfig* remote = MiLightRemoteConfig::fromType(bulbId.deviceType);
+
+    if (remote != NULL) {
+      for (size_t i = 1; i <= remote->numGroups; i++) {
+        bulbId.groupId = i;
+        staleGroups.push(bulbId);
+      }
+    }
+  }
+
   //Remember time, when queue was added for debounce delay
   lastQueue = millis();
+}
 
+void BulbStateUpdater::enqueueRefresh(BulbId bulbId) {
+  GroupState* groupState = stateStore.get(bulbId);
+
+  if (groupState != NULL) {
+    groupState->setMqttDirty();
+    staleGroups.push(bulbId);
+    lastQueue = millis();
+  }
 }
 
 void BulbStateUpdater::loop() {
@@ -29,7 +52,7 @@ void BulbStateUpdater::loop() {
     BulbId bulbId = staleGroups.shift();
     GroupState* groupState = stateStore.get(bulbId);
 
-    if (groupState->isMqttDirty()) {
+    if (groupState != NULL && groupState->isMqttDirty()) {
       flushGroup(bulbId, *groupState);
       groupState->clearMqttDirty();
     }

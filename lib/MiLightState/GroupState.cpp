@@ -606,6 +606,10 @@ bool GroupState::clearDirty() {
 }
 
 bool GroupState::isMqttDirty() const { return state.fields._mqttDirty; }
+bool GroupState::setMqttDirty() {
+  state.fields._mqttDirty = 1;
+  return true;
+}
 bool GroupState::clearMqttDirty() {
   state.fields._mqttDirty = 0;
   return true;
