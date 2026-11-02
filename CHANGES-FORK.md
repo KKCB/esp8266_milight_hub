@@ -28,6 +28,7 @@ any upstream pull request:
 | 2 | Re-publish all aliased states on MQTT (re)connect | Idea from **PR #779**, **fixed in this fork**: as written in the PR, unchanged states were skipped, so nothing was re-published |
 | — | NULL checks for unknown remote types / missing states | **New in this fork** |
 | 3 | Group 0 on/off state follows the individual groups | **New in this fork**, not part of any upstream PR |
+| 4 | Web UI loads its assets from the device instead of a dead CDN path | **PR #923** (fix commit only, without the rest of that PR) |
 
 ## Changes
 
@@ -67,6 +68,25 @@ groups without any lamp attached (e.g. group 4 of a 4-zone remote). If no group 
 device has an alias, all groups are considered. Brightness and other fields of group 0
 are not recomputed.
 
+### 4. Load web UI assets from the device (from PR #923)
+
+Commits: `d2c55c8`
+
+The page loader (`web2/src/pageload.js`) first tried to fetch the CSS/JS bundles from
+`cdn.jsdelivr.net/gh/sidoh/esp8266_milight_hub@web2/...`. That branch no longer exists, so
+every page load made failing requests to an external server before falling back to the
+copy on the device. The loader now uses the on-device bundles directly. The device serves
+them gzipped with long-lived cache headers and hashed file names, so after the first load
+they come from the browser cache.
+
+Taken from upstream pull request
+[#923](https://github.com/sidoh/esp8266_milight_hub/pull/923) by
+[@TehRobot-Assistant](https://github.com/TehRobot-Assistant) (fixes upstream issue #864).
+Only the actual fix commit was taken over. The PR is based on the unreleased upstream
+`1.13.1` branch, and its other changes are not part of this fork. `dist/index.html.gz.h`
+was regenerated with `npm run build` in `web2/`. The CSS/JS bundles are unchanged
+(identical content).
+
 ### Documentation: README state topic example (from PR #863)
 
 Commits: `fd926b3`
@@ -81,6 +101,7 @@ pull request [#863](https://github.com/sidoh/esp8266_milight_hub/pull/863) by
 | Version | Contents |
 |---|---|
 | `1.13.0-kkcb.1` | Changes 1–3 above |
+| `1.13.0-kkcb.2` | Change 4 (web UI without CDN) |
 
 ## Building
 
