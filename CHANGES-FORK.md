@@ -67,6 +67,15 @@ groups without any lamp attached (e.g. group 4 of a 4-zone remote). If no group 
 device has an alias, all groups are considered. Brightness and other fields of group 0
 are not recomputed.
 
+### Documentation: README state topic example (from PR #863)
+
+Commits: `fd926b3`
+
+The README used `milight/states/...` as the example state topic, while the default
+since 1.13 is `milight/state/...` (`lib/Settings/Settings.h`). Taken over from upstream
+pull request [#863](https://github.com/sidoh/esp8266_milight_hub/pull/863) by
+[@soif](https://github.com/soif) (see also issue #860). Documentation only, no firmware change.
+
 ## Versions
 
 | Version | Contents |
